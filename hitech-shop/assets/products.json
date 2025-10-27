@@ -1,0 +1,74 @@
+﻿[
+  {
+    "id": "t1",
+    "name": "Стол Aero X12",
+    "category": "tables",
+    "price_cents": 49900,
+    "image_url": "assets/images/products/tables/table-01.jpg",
+    "description": "Минималистичный стол с алюминиевыми вставками."
+  },
+  {
+    "id": "t2",
+    "name": "Стол Carbon S",
+    "category": "tables",
+    "price_cents": 69900,
+    "image_url": "assets/images/products/tables/table-02.jpg",
+    "description": "Композитная столешница, выглядит хай-тек."
+  },
+  {
+    "id": "t3",
+    "name": "Стол Mono",
+    "category": "tables",
+    "price_cents": 39900,
+    "image_url": "assets/images/products/tables/table-03.jpg",
+    "description": "Чистые линии, лаконичный дизайн."
+  },
+  {
+    "id": "l1",
+    "name": "Светильник Halo",
+    "category": "lamps",
+    "price_cents": 14900,
+    "image_url": "assets/images/products/lamps/lamp-01.jpg",
+    "description": "Мягкий рассеянный свет, LED."
+  },
+  {
+    "id": "l2",
+    "name": "Светильник Vector",
+    "category": "lamps",
+    "price_cents": 22900,
+    "image_url": "assets/images/products/lamps/lamp-02.jpg",
+    "description": "Регулируемая яркость, металлический корпус."
+  },
+  {
+    "id": "l3",
+    "name": "Светильник Axis",
+    "category": "lamps",
+    "price_cents": 18900,
+    "image_url": "assets/images/products/lamps/lamp-03.jpg",
+    "description": "Минималистичная геометрия для современного интерьера."
+  },
+  {
+    "id": "c1",
+    "name": "Стул Flow",
+    "category": "chairs",
+    "price_cents": 15900,
+    "image_url": "assets/images/products/chairs/chair-01.jpg",
+    "description": "Эргономика и устойчивость."
+  },
+  {
+    "id": "c2",
+    "name": "Стул Edge",
+    "category": "chairs",
+    "price_cents": 17900,
+    "image_url": "assets/images/products/chairs/chair-02.jpg",
+    "description": "Металл и микрофибра, строгий вид."
+  },
+  {
+    "id": "c3",
+    "name": "Стул Air",
+    "category": "chairs",
+    "price_cents": 13900,
+    "image_url": "assets/images/products/chairs/chair-03.jpg",
+    "description": "Лёгкий и прочный, современный силуэт."
+  }
+]

@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Личный кабинет — HiTech Furniture</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/css/images.css" />
+  <!-- Глобальный конфиг для фронта -->
+  <script>
+    window.hitechConfig = { useApi: true, apiBase: '/api' };
+  </script>
+  <script src="assets/config.js" defer></script>
+  <!-- Обязательно новая версия app.js, чтобы сбить кэш -->
+  <script src="assets/app.js?v=3.3" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container row between center">
+      <a class="brand" href="index.html">HiTech Furniture</a>
+
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" placeholder="Поиск по товарам..." />
+        <button type="submit">Найти</button>
+      </form>
+
+      <nav class="nav" id="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="category-tables.html">Столы</a>
+        <a href="category-lamps.html">Светильники</a>
+        <a href="category-chairs.html">Стулья</a>
+        <a href="cart.html" id="cart-link">Корзина (0)</a>
+        <a href="login.html" id="login-link">Войти</a>
+        <a href="account.html" id="account-link" style="display:none;">ЛК</a>
+        <button class="linklike" id="logout-btn" type="button" style="display:none;">Выйти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Личный кабинет</h1>
+    <p id="hello"></p>
+
+    <h2 id="profile">Профиль</h2>
+    <form id="profile-form" class="form">
+      <label>Имя<input type="text" name="name" /></label>
+      <label>Email<input type="email" name="email" readonly /></label>
+      <label>Телефон<input type="tel" name="phone" placeholder="+7..." /></label>
+      <label>Карта<input type="text" name="card" placeholder="0000 0000 0000 0000" /></label>
+      <button type="submit">Сохранить профиль</button>
+      <div id="profile-msg" class="info" style="display:none;">Профиль обновлён</div>
+    </form>
+
+    <h2 id="purchases">Мои покупки</h2>
+    <div id="orders" class="orders"></div>
+
+    <h2>Рекомендации</h2>
+    <div id="acc-reco" class="grid"></div>
+
+    <script>
+      window.addEventListener('DOMContentLoaded', async () => {
+        await window.app.initHeader();
+
+        const user = window.app.getCurrentUser();
+        if (!user) {
+          location.href = 'login.html?next=account.html';
+          return;
+        }
+        document.getElementById('hello').innerHTML =
+          `Привет, <strong>${user.name}</strong> (${user.email})`;
+
+        // Профиль
+        const form = document.getElementById('profile-form');
+        const msg = document.getElementById('profile-msg');
+        form.name.value = user.name || '';
+        form.email.value = user.email || '';
+        form.phone.value = user.phone || '';
+        form.card.value = user.card || '';
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          await window.app.updateProfile({
+            name: fd.get('name'),
+            phone: fd.get('phone'),
+            card: fd.get('card')
+          });
+          msg.style.display = 'block';
+          setTimeout(() => (msg.style.display = 'none'), 1200);
+          const u = window.app.getCurrentUser();
+          document.getElementById('hello').innerHTML =
+            `Привет, <strong>${u.name}</strong> (${u.email})`;
+        });
+
+        // Товары и разделы
+        try { await window.app.loadProducts(); } catch {}
+
+        // Рекомендации (если функция отсутствует — просто подставим случайные товары категории)
+        if (window.app.renderRecommendations) {
+          window.app.renderRecommendations('acc-reco', 6);
+        } else if (window.app.renderCategoryGrid) {
+          window.app.renderCategoryGrid('acc-reco', 'chairs', 6);
+        } else if (window.app.renderRandomProduct) {
+          // запасной вариант — одна случайная карточка
+          window.app.renderRandomProduct('acc-reco');
+        }
+
+        // Мои покупки (тянем из API)
+        window.app.renderOrders('orders');
+      });
+    </script>
+  </main>
+
+  <footer class="footer container">
+    <div>© 2025 HiTech Furniture — минимализм и технологии</div>
+  </footer>
+  <script src="assets/js/image-fallback.js"></script>
+</body>
+</html>

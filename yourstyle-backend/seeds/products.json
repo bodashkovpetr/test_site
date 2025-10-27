@@ -1,0 +1,74 @@
+[
+  {
+    "id": "t1",
+    "name": "Стол Aero X",
+    "category": "tables",
+    "price_cents": 49900,
+    "image_url": "",
+    "description": "Минималистичный стол с алюминиевыми вставками."
+  },
+  {
+    "id": "t2",
+    "name": "Стол Carbon S",
+    "category": "tables",
+    "price_cents": 69900,
+    "image_url": "",
+    "description": "Композитная столешница, выглядит хай-тек."
+  },
+  {
+    "id": "t3",
+    "name": "Стол Mono",
+    "category": "tables",
+    "price_cents": 39900,
+    "image_url": "",
+    "description": "Чистые линии, лаконичный дизайн."
+  },
+  {
+    "id": "l1",
+    "name": "Светильник Halo",
+    "category": "lamps",
+    "price_cents": 14900,
+    "image_url": "",
+    "description": "Мягкий рассеянный свет, LED."
+  },
+  {
+    "id": "l2",
+    "name": "Светильник Vector",
+    "category": "lamps",
+    "price_cents": 22900,
+    "image_url": "",
+    "description": "Регулируемая яркость, металлический корпус."
+  },
+  {
+    "id": "l3",
+    "name": "Светильник Axis",
+    "category": "lamps",
+    "price_cents": 18900,
+    "image_url": "",
+    "description": "Минималистичная геометрия для современного интерьера."
+  },
+  {
+    "id": "c1",
+    "name": "Стул Flow",
+    "category": "chairs",
+    "price_cents": 15900,
+    "image_url": "",
+    "description": "Эргономика и устойчивость."
+  },
+  {
+    "id": "c2",
+    "name": "Стул Edge",
+    "category": "chairs",
+    "price_cents": 17900,
+    "image_url": "",
+    "description": "Металл и микрофибра, строгий вид."
+  },
+  {
+    "id": "c3",
+    "name": "Стул Air",
+    "category": "chairs",
+    "price_cents": 13900,
+    "image_url": "",
+    "description": "Лёгкий и прочный, современный силуэт."
+  }
+]

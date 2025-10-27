@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Регистрация — HiTech Furniture</title>
+
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/css/images.css" />
+
+  <!-- Конфиг и базовое приложение -->
+  <script src="assets/config.js" defer></script>
+  <script src="assets/app.js?v=2.5" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container row between center">
+      <a class="brand" href="index.html">HiTech Furniture</a>
+
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" placeholder="Поиск по товарам..." />
+        <button type="submit">Найти</button>
+      </form>
+
+      <nav class="nav" id="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="category-tables.html">Столы</a>
+        <a href="category-lamps.html">Светильники</a>
+        <a href="category-chairs.html">Стулья</a>
+        <a href="cart.html" id="cart-link">Корзина (0)</a>
+        <a href="login.html" id="login-link">Войти</a>
+        <a href="account.html" id="account-link" style="display:none;">ЛК</a>
+        <button class="linklike" id="logout-btn" style="display:none;">Выйти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Регистрация</h1>
+
+    <div id="reg-error" class="error" style="display:none;"></div>
+
+    <!-- Важно: action="javascript:void(0)" и novalidate, чтобы исключить дефолтную навигацию -->
+    <form id="reg-form" class="form" method="post" action="javascript:void(0)" novalidate>
+      <label for="reg-name">Имя
+        <input required type="text" id="reg-name" name="name" autocomplete="name" />
+      </label>
+
+      <label for="reg-email">Email
+        <input required type="email" id="reg-email" name="email" autocomplete="email" />
+      </label>
+
+      <label for="reg-pass">Пароль
+        <input required type="password" id="reg-pass" name="password" autocomplete="new-password" />
+      </label>
+
+      <button type="submit">Создать аккаунт</button>
+    </form>
+  </main>
+
+  <footer class="footer container">
+    <div>© 2025 HiTech Furniture — минимализм и технологии</div>
+  </footer>
+
+  <script src="assets/js/image-fallback.js"></script>
+
+  <!-- Надёжная логика регистрации: не зависит от внутренностей app.js -->
+  <script>
+    // Базовый адрес API
+    const API_BASE = (window.app && (window.app.API_BASE || window.app.apiBase))
+      || (location.origin.replace(/\/+$/, '') + '/api');
+
+    async function handleRegister(e) {
+      e.preventDefault();
+
+      const form = document.getElementById('reg-form');
+      const err  = document.getElementById('reg-error');
+      err.style.display = 'none';
+
+      const fd = new FormData(form);
+      const name = (fd.get('name') || '').trim();
+      const email = (fd.get('email') || '').trim();
+      const password = (fd.get('password') || '');
+
+      if (!name || !email || !password) {
+        err.textContent = 'Заполните все поля';
+        err.style.display = 'block';
+        return false;
+      }
+
+      try {
+        const resp = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+          const msg = data?.error || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        // Успех: переходим на страницу логина
+        location.href = 'login.html';
+        return false;
+      } catch (ex) {
+        console.error('register fail:', ex);
+        err.textContent = ex.message || 'Ошибка регистрации';
+        err.style.display = 'block';
+        return false;
+      }
+    }
+
+    // Инициализация страницы
+    window.addEventListener('DOMContentLoaded', () => {
+      // Не блокируем страницу на случай 401 из initHeader
+      try {
+        const p = window.app?.initHeader?.();
+        if (p && typeof p.catch === 'function') p.catch(err => console.warn('initHeader error:', err));
+      } catch (e) {
+        console.warn('initHeader throw:', e);
+      }
+
+      const form = document.getElementById('reg-form');
+
+      // Жёстко отключаем любые сторонние дефолтные сабмиты/редиректы
+      form.setAttribute('action', 'javascript:void(0)');
+      form.setAttribute('novalidate', 'novalidate');
+      form.onsubmit = handleRegister; // перебьём возможный onsubmit из других скриптов
+      form.addEventListener('submit', handleRegister, { capture: true }); // перехват раньше других слушателей
+
+      // Подхват, если в app.js есть собственная функция
+      window.app = window.app || {};
+      if (typeof window.app.register !== 'function') {
+        window.app.register = async (name, email, password) => {
+          const resp = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+          return data?.success !== undefined ? data : { success: true, data };
+        };
+      }
+    });
+  </script>
+</body>
+</html>

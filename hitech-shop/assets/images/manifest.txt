@@ -1,0 +1,4 @@
+assets/images/hero/: hero-01.jpg
+assets/images/products/tables/: table-01.jpg, table-02.jpg, table-03.jpg
+assets/images/products/lamps/: lamp-01.jpg, lamp-02.jpg, lamp-03.jpg
+assets/images/products/chairs/: chair-01.jpg, chair-02.jpg, chair-03.jpg

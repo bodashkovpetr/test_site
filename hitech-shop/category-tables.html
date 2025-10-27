@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Столы — HiTech Furniture</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/config.js" defer></script>
+  <script src="assets/app.js?v=2.5" defer></script>
+  <link rel="stylesheet" href="assets/css/images.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container row between center">
+      <a class="brand" href="index.html">HiTech Furniture</a>
+
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" placeholder="Поиск по товарам..."/>
+        <button type="submit">Найти</button>
+      </form>
+
+      <nav class="nav" id="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="category-tables.html">Столы</a>
+        <a href="category-lamps.html">Светильники</a>
+        <a href="category-chairs.html">Стулья</a>
+        <a href="cart.html" id="cart-link">Корзина (0)</a>
+        <a href="login.html" id="login-link">Войти</a>
+        <a href="account.html" id="account-link" style="display:none;">ЛК</a>
+        <button class="linklike" id="logout-btn" style="display:none;">Выйти</button>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+  <h1>Столы</h1>
+  <div id="cat-grid" class="grid"></div>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      await window.app.initHeader();
+      await window.app.loadProducts();
+      window.app.renderCategoryGrid('cat-grid', 'tables', 3);
+    });
+  </script>
+
+</main>
+  <footer class="footer container">
+    <div>© 2025 HiTech Furniture — минимализм и технологии</div>
+  </footer>
+  <script src="assets/js/image-fallback.js"></script>
+</body>
+</html>

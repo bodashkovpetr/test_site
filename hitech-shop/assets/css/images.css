@@ -1,0 +1,159 @@
+/* Image styles (adaptive) */
+.img-shell{
+  width:100%;
+  aspect-ratio:4/3; /* default ratio */
+  background:#0b1120;
+  border-radius:12px;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+}
+.img-shell.tall{ aspect-ratio:3/4; }
+.img-shell.ultrawide{ aspect-ratio:21/9; }
+.img-shell > img{ width:100%; height:100%; object-fit:cover; display:block; }
+.img-shell.contain > img{ object-fit:contain; padding:8px; }
+
+/* Back-compat classes if used */
+.product-img{ display:block; }
+.hero-img{ width:100%; height:auto; object-fit:cover; border-radius:16px; background:#0b1120 }
+.category-icon{ width:64px; height:64px; object-fit:contain }
+
+
+/* === Desktop/Mobile fixes === */
+/* Random product card: wide on desktop, taller on mobile */
+#random-product-card .img-shell { aspect-ratio: 16/9; }
+@media (max-width: 768px) {
+  #random-product-card .img-shell { aspect-ratio: 4/3; }
+}
+#random-product-card .img-shell > img,
+#random-product-card .product-img {
+  width: 100%;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: cover;
+  display: block;
+}
+
+/* Hero logo: avoid "полоса" on desktop; keep full logo visible */
+.hero .hero-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 21/9;         /* desktop default */
+  object-fit: contain !important; /* show whole logo */
+  background: #0b1120;
+  border-radius: 16px;
+  padding: 8px;
+}
+@media (max-width: 1024px) {
+  .hero .hero-img { aspect-ratio: 16/9; }
+}
+@media (max-width: 640px) {
+  .hero .hero-img { aspect-ratio: 4/3; }
+}
+
+
+/* === Strict 4x3 everywhere (no stripes) === */
+.img-shell { aspect-ratio: 4/3 !important; border-radius: 12px; background:#0b1120; overflow:hidden; }
+.img-shell > img, .product-img { width:100%; height:100% !important; object-fit: cover !important; display:block; }
+/* neutralize auto-classes from imageFit */
+.img-shell.tall, .img-shell.ultrawide, .img-shell.contain { aspect-ratio: 4/3 !important; }
+
+/* Random product explicit */
+#random-product-card .img-shell { aspect-ratio: 4/3 !important; }
+
+/* Hero logo/image: also 4x3 and cover so no letterboxing */
+.hero .hero-img { width:100%; height:auto; aspect-ratio: 4/3 !important; object-fit: cover !important; padding: 0 !important; background:#0b1120; border-radius:16px; }
+
+
+/* --- HARD OVERRIDE: product-img is always 4:3 even without wrapper --- */
+.product-img{
+  width:100% !important;
+  height:auto !important;           /* cancel old 220px rule */
+  aspect-ratio: 4/3 !important;     /* force 4:3 by width */
+  object-fit: cover !important;
+  display:block;
+}
+
+
+/* === UI Elevation (desktop beautify) === */
+/* Softer cards */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 16px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* HERO: split layout with gradient panel */
+.hero{
+  margin: clamp(8px,2vw,12px) 0 0 0;
+  padding: clamp(16px,2.5vw,28px);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(90,169,255,0.14) 0%, rgba(90,169,255,0.04) 40%, rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.0));
+  display:grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: clamp(12px, 2vw, 22px);
+  align-items: center;
+}
+.hero h1{ font-size: clamp(28px, 3.6vw, 40px); margin: 0 0 6px; }
+.hero p{ color: var(--muted); margin: 0; }
+@media (max-width: 820px){ .hero{ grid-template-columns: 1fr; } }
+/* Keep full logo visible but within aesthetic frame */
+.hero .hero-img{
+  justify-self: end;
+  max-width: min(520px, 48vw);
+  aspect-ratio: 4/3 !important;
+  object-fit: contain !important;
+  background: radial-gradient(120% 120% at 80% 20%, #0f1320 0%, #0b0b0d 60%);
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* FEATURED (Random product) compact split layout on desktop */
+#random-product-card.card{ display:grid; gap: 14px; }
+@media (min-width: 980px){
+  #random-product-card.card{
+    grid-template-columns: minmax(420px, 1.1fr) minmax(280px, .9fr);
+    align-items: stretch;
+  }
+  #random-product-card.card > .img-shell{
+    grid-column: 1; grid-row: 1 / 5; aspect-ratio: 3/2 !important; /* чуть шире, чтобы не "квадрат" */
+    border-radius: 14px; overflow:hidden;
+  }
+  #random-product-card.card > h3{ grid-column: 2; margin: 0; }
+  #random-product-card.card > p{ grid-column: 2; color: var(--muted); }
+  #random-product-card.card > .row{ grid-column: 2; margin-top: auto; }
+}
+
+/* Micro: section titles */
+main section > h2{ font-size: clamp(18px,2.2vw,22px); margin: 10px 0 12px; }
+
+/* Home minimal layout */
+#home-search{ margin: 4px 0 18px; }
+#home-search-form input{ width:100%; max-width:540px; }
+#featured .card{ padding: 0; }
+#featured .card > h3{ padding: 16px 16px 8px; }
+
+#home-search-results:empty{ display:none; }
+
+
+/* Featured split on home with 1:1 image */
+#random-product-card .featured-card{ display:grid; gap:16px; padding:16px; }
+@media(min-width:980px){
+  #random-product-card .featured-card{ grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+#random-product-card .featured-card .media{ aspect-ratio: 1/1 !important; border-radius:14px; overflow:hidden; background:#0b1120; }
+#random-product-card .featured-card .media > img{ width:100%; height:100% !important; object-fit: cover !important; display:block; }
+#random-product-card .featured-card .details{ display:flex; flex-direction:column; gap:12px; }
+#random-product-card .featured-card h3{ margin:0; }
+
+/* center featured card on small screens as well */
+#random-product-card .featured-card{ margin:0 auto; }
+
+
+/* === Category pages: square thumbnails 1:1 === */
+#cat-grid .img-shell{ aspect-ratio:1/1 !important; border-radius:12px; overflow:hidden; background:#0b1120; }
+#cat-grid .img-shell > img, #cat-grid .product-img{ width:100%; height:100% !important; object-fit:cover !important; display:block; }
+#cat-grid .img-shell.tall, #cat-grid .img-shell.ultrawide, #cat-grid .img-shell.contain{ aspect-ratio:1/1 !important; }

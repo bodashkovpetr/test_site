@@ -1,0 +1,55 @@
+{
+  "hero": [
+    "hero-01.jpg",
+    "hero-02.jpg"
+  ],
+  "categories": [
+    "chairs.png",
+    "sofas.png",
+    "tables.png",
+    "storage.png",
+    "lighting.png"
+  ],
+  "products": {
+    "chairs": [
+      "chair-01.jpg",
+      "chair-02.jpg",
+      "chair-03.jpg",
+      "chair-04.jpg",
+      "chair-05.jpg",
+      "chair-06.jpg"
+    ],
+    "sofas": [
+      "sofa-01.jpg",
+      "sofa-02.jpg",
+      "sofa-03.jpg",
+      "sofa-04.jpg",
+      "sofa-05.jpg",
+      "sofa-06.jpg"
+    ],
+    "tables": [
+      "table-01.jpg",
+      "table-02.jpg",
+      "table-03.jpg",
+      "table-04.jpg",
+      "table-05.jpg",
+      "table-06.jpg"
+    ],
+    "storage": [
+      "storage-01.jpg",
+      "storage-02.jpg",
+      "storage-03.jpg",
+      "storage-04.jpg",
+      "storage-05.jpg",
+      "storage-06.jpg"
+    ],
+    "lighting": [
+      "light-01.jpg",
+      "light-02.jpg",
+      "light-03.jpg",
+      "light-04.jpg",
+      "light-05.jpg",
+      "light-06.jpg"
+    ]
+  }
+}

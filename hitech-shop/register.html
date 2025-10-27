@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Регистрация — HiTech Furniture</title>
+
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/css/images.css" />
+
+  <!-- Конфиг и базовое приложение (если используются в шапке/навигации) -->
+  <script src="assets/config.js" defer></script>
+  <script src="assets/app.js?v=2.5" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container row between center">
+      <a class="brand" href="index.html">HiTech Furniture</a>
+
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" placeholder="Поиск по товарам..." />
+        <button type="submit">Найти</button>
+      </form>
+
+      <nav class="nav" id="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="category-tables.html">Столы</a>
+        <a href="category-lamps.html">Светильники</a>
+        <a href="category-chairs.html">Стулья</a>
+        <a href="cart.html" id="cart-link">Корзина (0)</a>
+        <a href="login.html" id="login-link">Войти</a>
+        <a href="account.html" id="account-link" style="display:none;">ЛК</a>
+        <button class="linklike" id="logout-btn" style="display:none;">Выйти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Регистрация</h1>
+
+    <div id="reg-error" class="error" style="display:none;"></div>
+
+    <!-- Исключаем нативную отправку формы -->
+    <form id="reg-form" class="form" method="post" action="javascript:void(0)" novalidate>
+      <label for="reg-name">Имя
+        <input required type="text" id="reg-name" name="name" autocomplete="name" />
+      </label>
+
+      <label for="reg-email">Email
+        <input required type="email" id="reg-email" name="email" autocomplete="email" />
+      </label>
+
+      <label for="reg-pass">Пароль
+        <input required type="password" id="reg-pass" name="password" autocomplete="new-password" />
+      </label>
+
+      <button id="reg-submit" type="submit">Создать аккаунт</button>
+
+      <p style="margin-top:12px">
+        Уже есть аккаунт?
+        <a href="login.html">Войти</a>
+      </p>
+    </form>
+  </main>
+
+  <footer class="footer container">
+    <div>© 2025 HiTech Furniture — минимализм и технологии</div>
+  </footer>
+
+  <script src="assets/js/image-fallback.js"></script>
+
+  <script>
+    // Определяем базовый URL API
+    const API_BASE =
+      (window.app && (window.app.API_BASE || window.app.apiBase)) ||
+      (location.origin.replace(/\/+$/, '') + '/api');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Инициализация хедера (не блокируем страницу при ошибках)
+      try {
+        const p = window.app?.initHeader?.();
+        if (p && typeof p.catch === 'function') p.catch(err => console.warn('initHeader error:', err));
+      } catch (e) {
+        console.warn('initHeader throw:', e);
+      }
+
+      const form = document.getElementById('reg-form');
+      const errBox = document.getElementById('reg-error');
+      const btn = document.getElementById('reg-submit');
+
+      // Гарантируем отсутствие нативной отправки
+      form.setAttribute('action', 'javascript:void(0)');
+      form.setAttribute('novalidate', 'novalidate');
+      form.noValidate = true;
+
+      let submitting = false;
+
+      async function onSubmit(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // блокируем возможные другие submit-слушатели
+        if (submitting) return;
+
+        submitting = true;
+        btn?.setAttribute('disabled', 'true');
+        errBox.style.display = 'none';
+        errBox.textContent = '';
+
+        const name = document.getElementById('reg-name')?.value?.trim() || '';
+        const email = document.getElementById('reg-email')?.value?.trim() || '';
+        const password = document.getElementById('reg-pass')?.value || '';
+
+        if (!name || !email || !password) {
+          errBox.textContent = 'Заполните все поля';
+          errBox.style.display = 'block';
+          submitting = false;
+          btn?.removeAttribute('disabled');
+          return;
+        }
+
+        try {
+          const resp = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+          });
+
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = data?.error || data?.message || `HTTP ${resp.status}`;
+            throw new Error(msg);
+          }
+
+          // Успех — переход к логину
+          location.href = 'login.html';
+        } catch (ex) {
+          console.error('register fail:', ex);
+          errBox.textContent = ex.message || 'Ошибка регистрации';
+          errBox.style.display = 'block';
+        } finally {
+          submitting = false;
+          btn?.removeAttribute('disabled');
+        }
+      }
+
+      // Назначаем РОВНО один обработчик, в capture чтобы перехватить чужие
+      form.addEventListener('submit', onSubmit, { capture: true });
+
+      // На случай если кто-то повесил inline-обработчик
+      form.onsubmit = null;
+
+      // Резервная функция app.register (если нужна где-то ещё)
+      window.app = window.app || {};
+      if (typeof window.app.register !== 'function') {
+        window.app.register = async (name, email, password) => {
+          const resp = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || data?.message || `HTTP ${resp.status}`);
+          return data?.success !== undefined ? data : { success: true, data };
+        };
+      }
+    });
+  </script>
+</body>
+</html>

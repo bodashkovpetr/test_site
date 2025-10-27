@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Корзина — HiTech Furniture</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/config.js" defer></script>
+  <script src="assets/app.js?v=2.5" defer></script>
+  <link rel="stylesheet" href="assets/css/images.css">
+  <style>
+    .cart-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid #2a2a2a; }
+    .cart-item { display:flex; align-items:center; gap:12px; flex: 1 1 auto; }
+    .cart-item img { width:64px; height:64px; object-fit:cover; border-radius:8px; background:#111; }
+    .cart-info { display:flex; flex-direction:column; }
+    .cart-info .name { font-weight:600; }
+    .cart-info .meta { color:#9aa0a6; font-size:0.9rem; }
+    .line-total { min-width:120px; text-align:right; font-weight:600; }
+    .muted { color:#9aa0a6; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container row between center">
+      <a class="brand" href="index.html">HiTech Furniture</a>
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" placeholder="Поиск по товарам..."/>
+        <button type="submit">Найти</button>
+      </form>
+      <nav class="nav" id="nav-links">
+        <a href="index.html">Главная</a>
+        <a href="category-tables.html">Столы</a>
+        <a href="category-lamps.html">Светильники</a>
+        <a href="category-chairs.html">Стулья</a>
+        <a href="cart.html" id="cart-link">Корзина (0)</a>
+        <a href="login.html" id="login-link">Войти</a>
+        <a href="account.html" id="account-link" style="display:none;">ЛК</a>
+        <button class="linklike" id="logout-btn" style="display:none;">Выйти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Корзина</h1>
+    <div id="cart-empty" class="muted" style="display:none;">Корзина пуста.</div>
+    <div id="cart-list" class="cart-list"></div>
+    <div class="row between center" style="margin-top:16px;">
+      <h3>Итого: <span id="cart-total">0 ₽</span></h3>
+      <div id="cart-actions" class="row">
+        <button id="checkout-btn">Купить</button>
+      </div>
+    </div>
+    <div id="cart-msg" class="info" style="display:none; margin-top:12px;"></div>
+
+    <div id="profile-modal" class="modal-overlay" style="display:none;">
+      <div class="modal">
+        <div class="modal-header"><h3>Для заказа заполните профиль</h3></div>
+        <div class="modal-body">
+          <p class="muted">Имя, телефон и карта будут сохранены в личном кабинете.</p>
+          <div id="profile-inline-error" class="error" style="display:none;"></div>
+          <form id="profile-inline-form" class="form">
+            <label>Имя<input type="text" name="name" placeholder="Иван" /></label>
+            <label>Телефон<input type="tel" name="phone" placeholder="+7 900 000-00-00" /></label>
+            <label>Карта<input type="text" name="card" placeholder="0000 0000 0000 0000" /></label>
+            <div class="modal-actions row">
+              <button type="submit">Сохранить и продолжить</button>
+              <button type="button" id="profile-cancel" class="ghost">Отмена</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const $ = s => document.querySelector(s);
+
+        // initHeader не блокируем
+        window.addEventListener('DOMContentLoaded', () => {
+          try {
+            const p = window.app?.initHeader?.();
+            if (p && typeof p.catch === 'function') p.catch(e => console.warn('initHeader error:', e));
+          } catch (e) { console.warn('initHeader throw:', e); }
+        });
+
+        const API_BASE = (window.app && (window.app.API_BASE || window.app.apiBase))
+          || (location.origin.replace(/\/+$/, '') + '/api');
+
+        function getCookie(name) {
+          return document.cookie.split(';').map(s=>s.trim())
+            .filter(s=>s.startsWith(name+'='))
+            .map(s=>decodeURIComponent(s.split('=').slice(1).join('=')))[0] || '';
+        }
+        function getToken() {
+          const t = localStorage.getItem('token')
+                || getCookie('auth_token')
+                || localStorage.getItem('jwt')
+                || localStorage.getItem('Authorization');
+          return t || '';
+        }
+        function authHeader() {
+          const t = getToken();
+          if (!t) return {};
+          return t.startsWith('Bearer ') ? { Authorization: t } : { Authorization: 'Bearer ' + t };
+        }
+
+        function formatPrice(cents) {
+          return new Intl.NumberFormat('ru-RU').format((cents || 0) / 100) + ' ₽';
+        }
+
+        function updateCartCounter(items) {
+          try {
+            const totalQty = (items || []).reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+            const link = $('#cart-link');
+            if (link) link.textContent = `Корзина (${totalQty})`;
+            window.app?.updateCartCountUI?.({ items, total_cents: 0 });
+          } catch(_) {}
+        }
+
+        async function fetchCartAPI() {
+          const resp = await fetch(`${API_BASE}/cart`, { headers: { ...authHeader() } });
+          if (resp.status === 401) return { items: [], total_cents: 0 };
+          const ct = resp.headers.get('content-type') || '';
+          const data = ct.includes('application/json') ? await resp.json().catch(()=>({})) : {};
+          if (!resp.ok) throw new Error((data && (data.error || data.message)) || `HTTP ${resp.status}`);
+          return data?.data || data;
+        }
+
+        function renderCartView(model) {
+          const list = $('#cart-list');
+          const total = $('#cart-total');
+          const empty = $('#cart-empty');
+          const items = model?.items || [];
+          const total_cents = Number(model?.total_cents || 0);
+
+          list.innerHTML = '';
+          if (!items.length) {
+            if (empty) empty.style.display = '';
+            if (total) total.textContent = '0 ₽';
+            updateCartCounter(items);
+            return;
+          }
+          if (empty) empty.style.display = 'none';
+
+          for (const it of items) {
+            const name = it.name || it.title || it.product_name || it.product_id;
+            const img = it.image_url || 'assets/img/placeholder.svg';
+            const qty = Number(it.quantity) || 0;
+            const priceC = Number(it.price_cents) || 0;
+            const lineC = Number(it.line_total_cents) || (qty * priceC);
+
+            const row = document.createElement('div');
+            row.className = 'cart-row';
+            row.innerHTML = `
+              <div class="cart-item">
+                <img src="${img}" alt="">
+                <div class="cart-info">
+                  <div class="name">${name}</div>
+                  <div class="meta">x${qty} × ${formatPrice(priceC)}</div>
+                </div>
+              </div>
+              <div class="line-total">${formatPrice(lineC)}</div>
+            `;
+            list.appendChild(row);
+          }
+          if (total) total.textContent = formatPrice(total_cents);
+          updateCartCounter(items);
+        }
+
+        async function loadAndRenderCart() {
+          try {
+            const cart = await fetchCartAPI();
+            renderCartView(cart);
+          } catch (e) {
+            console.error('cart load error:', e);
+            renderCartView({ items: [], total_cents: 0 });
+          }
+        }
+
+        async function checkoutFallback() {
+          const resp = await fetch(`${API_BASE}/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeader() }
+          });
+          if (resp.status === 401) return { needLogin: true };
+          const ct = resp.headers.get('content-type') || '';
+          const data = ct.includes('application/json') ? await resp.json().catch(()=>({})) : {};
+          if (!resp.ok) {
+            const msg = data?.error || `HTTP ${resp.status}`;
+            return { success: false, error: msg };
+          }
+          return data?.success !== undefined ? data : { success: true, data };
+        }
+
+        async function attemptPurchase() {
+          const msg = $('#cart-msg'); msg.style.display = 'none';
+          try {
+            const res = typeof window.app?.checkout === 'function' ? await window.app.checkout() : await checkoutFallback();
+            if (res?.needLogin) { location.href = 'login.html?next=cart.html'; return; }
+            if (res?.needProfile) { openModalWithUser(); return; }
+            if (res?.success) {
+              msg.textContent = 'Покупка совершена! Товары перемещены в «Мои покупки».';
+              msg.style.display = 'block';
+              await loadAndRenderCart();
+              setTimeout(() => location.href = 'account.html#purchases', 800);
+            } else {
+              throw new Error(res?.error || 'Не удалось оформить заказ');
+            }
+          } catch (e) {
+            alert(e.message || 'Ошибка при оформлении заказа');
+          }
+        }
+
+        function openModalWithUser() {
+          const modal = $('#profile-modal');
+          const form = $('#profile-inline-form');
+          const err = $('#profile-inline-error');
+          const u = (window.app?.getCurrentUser?.() || { name:'', phone:'', card:'' });
+          form.name.value  = u.name  || '';
+          form.phone.value = u.phone || '';
+          form.card.value  = u.card  || '';
+          err.style.display = 'none';
+          modal.style.display = 'flex';
+        }
+        function closeModal(){ $('#profile-modal').style.display = 'none'; }
+
+        window.addEventListener('DOMContentLoaded', () => {
+          $('#checkout-btn')?.addEventListener('click', attemptPurchase);
+          const form = $('#profile-inline-form');
+          const err  = $('#profile-inline-error');
+          form?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fd = new FormData(form);
+            const name  = (fd.get('name')  || '').trim();
+            const phone = (fd.get('phone') || '').trim();
+            const card  = (fd.get('card')  || '').trim();
+            if (!name || !phone || !card) {
+              err.textContent = 'Заполните имя, телефон и карту';
+              err.style.display = 'block';
+              return;
+            }
+            try { window.app?.updateProfile?.({ name, phone, card }); } catch(_) {}
+            closeModal();
+            attemptPurchase();
+          });
+          $('#profile-cancel')?.addEventListener('click', closeModal);
+          $('#profile-modal')?.addEventListener('click', (e) => { if (e.target === $('#profile-modal')) closeModal(); });
+
+          loadAndRenderCart();
+        });
+      })();
+    </script>
+  </main>
+
+  <footer class="footer container">
+    <div>© 2025 HiTech Furniture — минимализм и технологии</div>
+  </footer>
+
+  <script src="assets/js/image-fallback.js"></script>
+</body>
+</html>

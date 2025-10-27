@@ -1,0 +1,14 @@
+[
+  {
+    "email": "demo@yourstyle.space",
+    "password": "password123",
+    "name": "Demo User",
+    "role": "user"
+  },
+  {
+    "email": "admin@yourstyle.space",
+    "password": "AdminPass123!",
+    "name": "Admin User",
+    "role": "admin"
+  }
+]
