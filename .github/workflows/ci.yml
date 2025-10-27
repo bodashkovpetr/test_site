@@ -42,38 +42,26 @@ jobs:
       - name: Install root dev deps (npm)
         run: npm ci || npm i
 
-      - name: Enable Corepack + pin Yarn 4.9.4
-        run: |
-          corepack enable
-          corepack prepare yarn@4.9.4 --activate
-          yarn -v
+      # (опционально) чуть подождём БД и порт
+      - name: Wait for Postgres (tcp 5432)
+        run: npx wait-on --timeout 60000 tcp:5432
 
-      - name: Install backend deps (yarn)
+      # Бэкенд — npm
+      - name: Install backend deps (npm)
         working-directory: yourstyle-backend
-        run: |
-          yarn install --immutable || yarn install
-
-      - name: Wait for Postgres to be ready
-        env:
-          PGPASSWORD: app
-        run: |
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U app -d app_test && exit 0
-            echo "Postgres not ready yet, retry $i/30"; sleep 2
-          done
-          echo "Postgres did not become ready in time"; exit 1
+        run: npm ci || npm i
 
       - name: DB migrate + seed
         working-directory: yourstyle-backend
         run: |
-          yarn migrate
-          yarn seed
+          npm run migrate
+          npm run seed
 
       - name: Start backend (3001)
         working-directory: yourstyle-backend
         env:
           PORT: 3001
-        run: nohup yarn start > ../backend.log 2>&1 &
+        run: nohup npm start > ../backend.log 2>&1 &
 
       - name: Show first lines of backend log
         run: |
@@ -93,7 +81,7 @@ jobs:
             exit 1
           fi
 
-      # Фронтенд — статика из папки hitech-shop
+      # Фронт — раздаём статическую папку hitech-shop
       - name: Start static frontend (3000)
         run: nohup npx http-server ./hitech-shop -p 3000 -a 127.0.0.1 > frontend.log 2>&1 &
 

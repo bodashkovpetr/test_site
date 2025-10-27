@@ -172,6 +172,7 @@
   "devDependencies": {
     "concurrently": "^9.2.1",
     "cypress": "^15.5.0",
+    "http-server": "^14.1.1",
     "wait-on": "^9.0.1"
   },
   "scripts": {
