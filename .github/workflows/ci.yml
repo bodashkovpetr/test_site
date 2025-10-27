@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main, develop, feature/** ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app_test
+        ports: ['5432:5432']
+        # здоровье БД, чтобы не стартовать миграции раньше времени
+        options: >-
+          --health-cmd="pg_isready -U app -d app_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # переменные, которые читает ваш Pool (database.js)
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_NAME: app_test
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # корень: dev-зависимости (cypress, wait-on, http-server)
+      - name: Install root dev deps
+        run: npm ci || npm i
+
+      # Yarn 4 для бэкенда
+      - name: Enable Corepack (Yarn 4)
+        run: corepack enable
+
+      - name: Install backend deps (yarn)
+        working-directory: yourstyle-backend
+        run: yarn install --immutable
+
+      # Миграции и сиды
+      - name: DB migrate + seed
+        working-directory: yourstyle-backend
+        run: |
+          yarn migrate
+          yarn seed
+
+      # Запуск бэка на 3001
+      - name: Start backend (3001)
+        working-directory: yourstyle-backend
+        env:
+          PORT: 3001
+        run: nohup yarn start > ../backend.log 2>&1 &
+
+      - name: Wait for backend
+        run: npx wait-on http://localhost:3001/healthz || npx wait-on tcp:3001
+
+      # Фронт — статика из папки hitech-shop на 3000
+      - name: Start static frontend (3000)
+        run: nohup npx http-server ./hitech-shop -p 3000 -a 127.0.0.1 > frontend.log 2>&1 &
+
+      - name: Wait for frontend
+        run: npx wait-on http://localhost:3000
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          headless: true
+          browser: chrome
+          spec: cypress/e2e/**/*.cy.{js,ts}
+          wait-on: 'http://localhost:3000'
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+            backend.log
+            frontend.log
