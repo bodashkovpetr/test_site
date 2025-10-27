@@ -16,8 +16,7 @@ jobs:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: app
           POSTGRES_DB: app_test
-        ports: ['5432:5432']
-        # здоровье БД, чтобы не стартовать миграции раньше времени
+        ports: [ "5432:5432" ]
         options: >-
           --health-cmd="pg_isready -U app -d app_test"
           --health-interval=10s
@@ -25,7 +24,6 @@ jobs:
           --health-retries=5
 
     env:
-      # переменные, которые читает ваш Pool (database.js)
       DB_HOST: localhost
       DB_PORT: 5432
       DB_USER: app
@@ -40,49 +38,71 @@ jobs:
         with:
           node-version: 20
 
-      # корень: dev-зависимости (cypress, wait-on, http-server)
-      - name: Install root dev deps
+      - name: Install root dev deps (npm)
         run: npm ci || npm i
 
-      # Yarn 4 для бэкенда
-      - name: Enable Corepack (Yarn 4)
-        run: corepack enable
+      - name: Wait for Postgres (tcp 5432)
+        run: npx wait-on --timeout 60000 tcp:5432
 
-      - name: Install backend deps (yarn)
+      - name: Install backend deps (npm)
         working-directory: yourstyle-backend
-        run: yarn install --immutable
+        run: npm ci || npm i
 
-      # Миграции и сиды
       - name: DB migrate + seed
         working-directory: yourstyle-backend
         run: |
-          yarn migrate
-          yarn seed
+          npm run migrate
+          npm run seed
 
-      # Запуск бэка на 3001
       - name: Start backend (3001)
         working-directory: yourstyle-backend
         env:
           PORT: 3001
-        run: nohup yarn start > ../backend.log 2>&1 &
+        run: |
+          ( npm start 2>&1 | tee ../backend.log ) & echo $! > ../backend.pid
 
-      - name: Wait for backend
-        run: npx wait-on http://localhost:3001/healthz || npx wait-on tcp:3001
+      - name: Show first lines of backend log
+        run: |
+          sleep 2
+          [[ -f backend.log ]] && head -n 200 backend.log || echo "backend.log not found"
 
-      # Фронт — статика из папки hitech-shop на 3000
+      - name: Wait for backend (timeout 180s)
+        run: |
+          set -e
+          if npx wait-on --timeout 180000 http://localhost:3001/healthz; then
+            echo "Backend is up"
+          else
+            echo "Backend did not start in time"
+            echo "----- backend.log -----"
+            [[ -f backend.log ]] && tail -n +1 backend.log || echo "backend.log not found"
+            echo "----- listening ports -----"
+            ss -lntp || true
+            exit 1
+          fi
+
       - name: Start static frontend (3000)
         run: nohup npx http-server ./hitech-shop -p 3000 -a 127.0.0.1 > frontend.log 2>&1 &
 
-      - name: Wait for frontend
-        run: npx wait-on http://localhost:3000
+      - name: Wait for frontend (timeout 60s)
+        run: |
+          set -e
+          if npx wait-on --timeout 60000 http://localhost:3000; then
+            echo "Frontend is up"
+          else
+            echo "Frontend did not start in time"
+            echo "----- frontend.log -----"
+            [[ -f frontend.log ]] && tail -n +1 frontend.log || echo "frontend.log not found"
+            ss -lntp || true
+            exit 1
+          fi
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
         with:
-          headless: true
           browser: chrome
           spec: cypress/e2e/**/*.cy.{js,ts}
-          wait-on: 'http://localhost:3000'
+          wait-on: http://localhost:3000
+          wait-on-timeout: 120000
 
       - name: Upload artifacts
         if: always()
