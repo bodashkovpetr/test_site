@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../../git"
+		},
+		{
+			"path": "../../../new_cypress-main"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}
