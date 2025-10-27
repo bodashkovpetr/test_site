@@ -38,14 +38,12 @@ jobs:
         with:
           node-version: 20
 
-      # Корневые dev-зависимости: cypress, wait-on, http-server
       - name: Install root dev deps (npm)
         run: npm ci || npm i
 
       - name: Wait for Postgres (tcp 5432)
         run: npx wait-on --timeout 60000 tcp:5432
 
-      # Бэкенд на npm
       - name: Install backend deps (npm)
         working-directory: yourstyle-backend
         run: npm ci || npm i
@@ -60,7 +58,6 @@ jobs:
         working-directory: yourstyle-backend
         env:
           PORT: 3001
-        # Показываем вывод сразу и пишем в backend.log
         run: |
           ( npm start 2>&1 | tee ../backend.log ) & echo $! > ../backend.pid
 
@@ -83,7 +80,6 @@ jobs:
             exit 1
           fi
 
-      # Фронтенд — статика из папки hitech-shop
       - name: Start static frontend (3000)
         run: nohup npx http-server ./hitech-shop -p 3000 -a 127.0.0.1 > frontend.log 2>&1 &
 
@@ -103,9 +99,10 @@ jobs:
       - name: Run Cypress
         uses: cypress-io/github-action@v6
         with:
-          headless: true
           browser: chrome
           spec: cypress/e2e/**/*.cy.{js,ts}
+          wait-on: http://localhost:3000
+          wait-on-timeout: 120000
 
       - name: Upload artifacts
         if: always()
