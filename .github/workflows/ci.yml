@@ -42,11 +42,10 @@ jobs:
       - name: Install root dev deps (npm)
         run: npm ci || npm i
 
-      # (опционально) чуть подождём БД и порт
       - name: Wait for Postgres (tcp 5432)
         run: npx wait-on --timeout 60000 tcp:5432
 
-      # Бэкенд — npm
+      # Бэкенд на npm
       - name: Install backend deps (npm)
         working-directory: yourstyle-backend
         run: npm ci || npm i
@@ -61,16 +60,19 @@ jobs:
         working-directory: yourstyle-backend
         env:
           PORT: 3001
-        run: nohup npm start > ../backend.log 2>&1 &
+        # Показываем вывод сразу и пишем в backend.log
+        run: |
+          ( npm start 2>&1 | tee ../backend.log ) & echo $! > ../backend.pid
 
       - name: Show first lines of backend log
         run: |
-          [[ -f backend.log ]] && head -n 100 backend.log || true
+          sleep 2
+          [[ -f backend.log ]] && head -n 200 backend.log || echo "backend.log not found"
 
-      - name: Wait for backend (timeout 120s)
+      - name: Wait for backend (timeout 180s)
         run: |
           set -e
-          if npx wait-on --timeout 120000 http://localhost:3001/healthz; then
+          if npx wait-on --timeout 180000 http://localhost:3001/healthz; then
             echo "Backend is up"
           else
             echo "Backend did not start in time"
@@ -81,7 +83,7 @@ jobs:
             exit 1
           fi
 
-      # Фронт — раздаём статическую папку hitech-shop
+      # Фронтенд — статика из папки hitech-shop
       - name: Start static frontend (3000)
         run: nohup npx http-server ./hitech-shop -p 3000 -a 127.0.0.1 > frontend.log 2>&1 &
 
